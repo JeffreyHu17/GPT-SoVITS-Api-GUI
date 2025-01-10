@@ -5,9 +5,9 @@ GAG is an inference GUI that can be directly used with the official GPT-SoVITS i
 ## Introduction
 
 <p float="left">
-  <img src="GAG_tools/images/GAG-1.png" width="33%" />
-  <img src="GAG_tools/images/GAG-2.png" width="33%" />
-  <img src="GAG_tools/images/GAG-3.png" width="33%" />
+  <img src="GAG_tools/images/GAG-1.png" width="32%" />
+  <img src="GAG_tools/images/GAG-2.png" width="32%" />
+  <img src="GAG_tools/images/GAG-3.png" width="32%" />
 </p>
 
 **注意： 如果你的系统语言为中文，那么界面语言应该会自动切换为中文**
