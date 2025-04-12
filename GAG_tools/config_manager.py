@@ -67,6 +67,8 @@ class ConfigManager:
                         'gpt_model': '',
                         'sovits_model': '',
                         'no_prompt': False,
+                        "sample_steps": 32,
+                        "super_sampling": False,
                     }
                 },
                 'current_preset': 'Default',

@@ -133,6 +133,36 @@ class TTSGUI(QMainWindow):
             'auto': self.tr('多语种混合'),
             'auto_yue': self.tr('多语种混合(粤语)')
         }
+        self.SAMPLE_STEPS = {
+            4: '4',
+            8: '8',
+            16: '16',
+            32: '32',
+            64: '64',
+            128: '128'
+        }
+        self.GPT_DIRS = [
+            ('GPT_weights', 'v1'),
+            ('GPT_weights_v2', 'v2'),
+            ('GPT_weights_v3', 'v3')
+        ]
+        self.SOVITS_DIRS = [
+            ('SoVITS_weights', 'v1'),
+            ('SoVITS_weights_v2', 'v2'),
+            ('SoVITS_weights_v3', 'v3')
+        ]
+        self.MODEL_PARAM_RESTRICTIONS = {
+            'sovits': {
+                'v1': ['sample_steps', 'super_sampling'],
+                'v2': ['sample_steps', 'super_sampling'],
+                'v3': ['aux_ref_audio_paths', 'no_prompt'],
+            },
+            'gpt': {
+                'v1': [],
+                'v2': [],
+                'v3': [],
+            }
+        }
         self.config_manager = ConfigManager()
         self.setup_cache_directory()
         self.current_audio_file = None
@@ -142,11 +172,13 @@ class TTSGUI(QMainWindow):
         self.gpt_switching = False
         self.sovits_switching = False
         self.synthesis_pending = False
-        os.makedirs('GPT_weights_v2', exist_ok=True)
-        os.makedirs('SoVITS_weights_v2', exist_ok=True)
+        for dir_info in self.GPT_DIRS + self.SOVITS_DIRS:
+            os.makedirs(dir_info[0], exist_ok=True)
         self.watcher = QFileSystemWatcher(self)
-        self.watcher.addPath('GPT_weights_v2')
-        self.watcher.addPath('SoVITS_weights_v2')
+        for dir_info in self.GPT_DIRS + self.SOVITS_DIRS:
+            dir_name = dir_info[0]
+            os.makedirs(dir_name, exist_ok=True)
+            self.watcher.addPath(dir_name)
         self.watcher.directoryChanged.connect(self.update_model_lists)
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setAutoFillBackground(True)
@@ -192,11 +224,11 @@ class TTSGUI(QMainWindow):
         self.text_input.setPlaceholderText(
             self.tr("在这里输入需要合成的文本..."
                     "\n\n使用方法：\n"
-                    "1.将本exe放入GPT-SoVITS官方整合包下，双击启动。\n"
-                    "2.将读取并使用GPT_weights_v2与SoVITS_weights_v2下的模型，请先完成训练获得模型。\n"
-                    "3.保存预设将保存当前所有合成参数设定，可视为一个说话人，后续可快速切换，亦可用于批量合成页面\n"
+                    "1.将本exe放入GPT-SoVITS-v3lora-20250401或更新的官方整合包下，双击启动，支持v1，v2，v3模型。\n"
+                    "2.将读取并使用GPT_weights，_v2，_v3与SoVITS_weights，_v2，_v3下的模型，请先完成训练获得模型。\n"
+                    "3.保存预设将保存当前所有合成参数设定，可视为一个说话人，后续可快速切换，亦可用于批量合成页面。\n"
                     "4.默认使用整合包自带环境来调起并使用API，也可以在API管理页面自定义。\n"
-                    "\n此外，如果你使用官方v2-240821整合包，你可能会遇见粤语等语种合成空白音频的问题，这是GPT-SoVITS的一个已知并已解决的问题，更新整合包代码到仓库最新即可。"
+                    "\n此外，若无可用N卡并使用官方整合包，请在初次启动前修改GPT_SoVITS/configs/tts_infer.yaml中的device为cpu, is_half为false 以避免API启动失败。"
                     "\n\nGitHub开源地址: https://github.com/AliceNavigator/GPT-SoVITS-Api-GUI           by  领航员未鸟\n")
         )
 
@@ -306,12 +338,14 @@ class TTSGUI(QMainWindow):
         self.gpt_combo = QComboBox()
         self.gpt_combo.setMinimumWidth(175)
         self.gpt_combo.activated.connect(self.update_model_lists)
+        self.gpt_combo.currentIndexChanged.connect(self.update_param_restrictions)
         model_layout.addRow(self.tr("GPT 模型:"), self.gpt_combo)
 
         # Sovits model
         self.sovits_combo = QComboBox()
         self.sovits_combo.setMinimumWidth(175)
         self.sovits_combo.activated.connect(self.update_model_lists)
+        self.sovits_combo.currentIndexChanged.connect(self.update_param_restrictions)
         model_layout.addRow(self.tr("SoVITS 模型:"), self.sovits_combo)
 
         model_group.setLayout(model_layout)
@@ -441,15 +475,22 @@ class TTSGUI(QMainWindow):
         options_grid = QGridLayout()
         self.param_widgets['parallel_infer'] = QCheckBox(self.tr("并行推理"))
         self.param_widgets['split_bucket'] = QCheckBox(self.tr("数据分桶"))
-        self.param_widgets['return_fragment'] = QCheckBox(self.tr("返回片段"))
-        self.param_widgets['streaming_mode'] = QCheckBox(self.tr("流式模式"))
+        self.param_widgets['super_sampling'] = QCheckBox(self.tr("音频超分"))
+        self.param_widgets['sample_steps'] = QComboBox()
+        for key, value in self.SAMPLE_STEPS.items():
+            self.param_widgets['sample_steps'].addItem(value, key)
+        self.param_widgets['sample_steps'].setCurrentIndex(3)
+
+        sample_steps_widget = QWidget()
+        sample_steps_layout = QHBoxLayout(sample_steps_widget)
+        sample_steps_layout.setContentsMargins(0, 0, 0, 0)
+        sample_steps_layout.addWidget(QLabel(self.tr("采样步数:")))
+        sample_steps_layout.addWidget(self.param_widgets['sample_steps'])
 
         options_grid.addWidget(self.param_widgets['parallel_infer'], 0, 0)
-        options_grid.addWidget(self.param_widgets['split_bucket'], 0, 1)
-        options_grid.addWidget(self.param_widgets['return_fragment'], 1, 0)
-        self.param_widgets['return_fragment'].setEnabled(False)
-        options_grid.addWidget(self.param_widgets['streaming_mode'], 1, 1)
-        self.param_widgets['streaming_mode'].setEnabled(False)
+        options_grid.addWidget(sample_steps_widget, 0, 1)
+        options_grid.addWidget(self.param_widgets['split_bucket'], 1, 0)
+        options_grid.addWidget(self.param_widgets['super_sampling'], 1, 1)
 
         gen_layout.addLayout(options_grid)
 
@@ -582,6 +623,22 @@ class TTSGUI(QMainWindow):
             self.tr("{:.2f} GB / {:.2f} GB").format(memory_used_gb, memory_total_gb))
         self.memory_progress.setValue(int(memory_percent))
 
+    def get_model_version(self, model_type):
+        combo = self.gpt_combo if model_type == 'gpt' else self.sovits_combo
+        return combo.currentText().split('/')[0]
+
+    def update_param_restrictions(self):
+        sovits_ver = self.get_model_version('sovits')
+        gpt_ver = self.get_model_version('gpt')
+
+        restricted_params = set(
+            self.MODEL_PARAM_RESTRICTIONS['sovits'].get(sovits_ver, []) +
+            self.MODEL_PARAM_RESTRICTIONS['gpt'].get(gpt_ver, [])
+        )
+
+        for param, widget in self.param_widgets.items():
+            widget.setEnabled(param not in restricted_params)
+
     @staticmethod
     def get_model_files(directory, extension):
         if not os.path.exists(directory):
@@ -589,28 +646,62 @@ class TTSGUI(QMainWindow):
         return [f for f in os.listdir(directory) if f.endswith(extension)]
 
     def update_model_lists(self):
-        # Save current selection
-        current_gpt = self.gpt_combo.currentText()
-        current_sovits = self.sovits_combo.currentText()
+        current_gpt = self.gpt_combo.currentData()
+        current_sovits = self.sovits_combo.currentData()
 
-        # Update model list
         self.gpt_combo.clear()
-        gpt_models = self.get_model_files('GPT_weights_v2', '.ckpt')
-        self.gpt_combo.addItems(gpt_models)
+        gpt_models = []
+        for dir_name, version in self.GPT_DIRS:
+            models = self.get_model_files(dir_name, '.ckpt')
+            for model in models:
+                display_name = f"{version}/{model}"
+                full_path = os.path.join(dir_name, model)
+                gpt_models.append((display_name, full_path))
+
+        seen = set()
+        unique_models = []
+        for display, path in gpt_models:
+            if path not in seen:
+                seen.add(path)
+                unique_models.append((display, path))
+        unique_models.sort(key=lambda x: (x[0].split('/')[0], x[0].split('/')[1]))
+
+        for display, path in unique_models:
+            self.gpt_combo.addItem(display, path)
+
+        if current_gpt in seen:
+            index = self.gpt_combo.findData(current_gpt)
+            if index >= 0:
+                self.gpt_combo.setCurrentIndex(index)
 
         self.sovits_combo.clear()
-        sovits_models = self.get_model_files('SoVITS_weights_v2', '.pth')
-        self.sovits_combo.addItems(sovits_models)
+        sovits_models = []
+        for dir_name, version in self.SOVITS_DIRS:
+            models = self.get_model_files(dir_name, '.pth')
+            for model in models:
+                display_name = f"{version}/{model}"
+                full_path = os.path.join(dir_name, model)
+                sovits_models.append((display_name, full_path))
 
-        # Restore previous selection if it still exists
-        if current_gpt in gpt_models:
-            self.gpt_combo.setCurrentText(current_gpt)
-        if current_sovits in sovits_models:
-            self.sovits_combo.setCurrentText(current_sovits)
+        seen_sovits = set()
+        unique_sovits = []
+        for display, path in sovits_models:
+            if path not in seen_sovits:
+                seen_sovits.add(path)
+                unique_sovits.append((display, path))
+        unique_sovits.sort(key=lambda x: (x[0].split('/')[0], x[0].split('/')[1]))
+
+        for display, path in unique_sovits:
+            self.sovits_combo.addItem(display, path)
+
+        if current_sovits in seen_sovits:
+            index = self.sovits_combo.findData(current_sovits)
+            if index >= 0:
+                self.sovits_combo.setCurrentIndex(index)
 
     def switch_models_and_synthesize(self):
-        gpt_model = os.path.join('GPT_weights_v2', self.gpt_combo.currentText())
-        sovits_model = os.path.join('SoVITS_weights_v2', self.sovits_combo.currentText())
+        gpt_model = self.gpt_combo.currentData()
+        sovits_model = self.sovits_combo.currentData()
 
         self.gpt_switching = False
         self.sovits_switching = False
@@ -647,10 +738,10 @@ class TTSGUI(QMainWindow):
         else:
             self.statusBar.showMessage(message, 5000)
             if "GPT" in message:
-                self.current_gpt_model = os.path.join('GPT_weights_v2', self.gpt_combo.currentText())
+                self.current_gpt_model = self.gpt_combo.currentData()
                 self.gpt_switching = False
             elif "SOVITS" in message:
-                self.current_sovits_model = os.path.join('SoVITS_weights_v2', self.sovits_combo.currentText())
+                self.current_sovits_model = self.sovits_combo.currentData()
                 self.sovits_switching = False
 
         # If all requested switches are complete and there is a pending synthesis task, execute synthesis
@@ -817,12 +908,12 @@ class TTSGUI(QMainWindow):
         preset_data = presets.get(preset_name, {})
 
         if 'gpt_model' in preset_data and preset_data['gpt_model']:
-            index = self.gpt_combo.findText(os.path.basename(preset_data['gpt_model']))
+            index = self.gpt_combo.findData(preset_data['gpt_model'])
             if index >= 0:
                 self.gpt_combo.setCurrentIndex(index)
 
         if 'sovits_model' in preset_data and preset_data['sovits_model']:
-            index = self.sovits_combo.findText(os.path.basename(preset_data['sovits_model']))
+            index = self.sovits_combo.findData(preset_data['sovits_model'])
             if index >= 0:
                 self.sovits_combo.setCurrentIndex(index)
 
@@ -847,8 +938,8 @@ class TTSGUI(QMainWindow):
         preset_name, ok = QInputDialog.getText(self, self.tr("保存预设"), self.tr("输入预设名:"))
         if ok and preset_name:
             preset_data = {
-                'gpt_model': os.path.join('GPT_weights_v2', self.gpt_combo.currentText()),
-                'sovits_model': os.path.join('SoVITS_weights_v2', self.sovits_combo.currentText())
+                'gpt_model': self.gpt_combo.currentData(),
+                'sovits_model': self.sovits_combo.currentData(),
             }
 
             for param, widget in self.param_widgets.items():
@@ -909,7 +1000,7 @@ class TTSGUI(QMainWindow):
             if isinstance(widget, QLineEdit):
                 if param == 'aux_ref_audio_paths':
                     value = widget.text().split(';') if widget.text() else []
-                elif param == 'prompt_text' and self.param_widgets['no_prompt'].isChecked():
+                elif param == 'prompt_text' and self.param_widgets['no_prompt'].isChecked() and not self.get_model_version('sovits') == 'v3':
                     value = ""
                 else:
                     value = widget.text()
