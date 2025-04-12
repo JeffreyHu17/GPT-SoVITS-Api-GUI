@@ -542,7 +542,7 @@ class BatchTTS(QWidget):
             'text_lang': preset_config.get('text_lang', 'all_zh'),
             'ref_audio_path': preset_config.get('ref_audio_path', ''),
             'prompt_lang': preset_config.get('prompt_lang', 'all_zh'),
-            'prompt_text': '' if preset_config.get('no_prompt', False) else preset_config.get('prompt_text', ''),
+            'prompt_text': '' if preset_config.get('no_prompt', False) and os.path.basename(os.path.dirname(preset_config.get('sovits_model'))) != 'SoVITS_weights_v3' else preset_config.get('prompt_text', ''),
             'aux_ref_audio_paths': preset_config.get('aux_ref_audio_paths', []),
             'top_k': preset_config.get('top_k', 5),
             'top_p': preset_config.get('top_p', 1.0),
@@ -555,7 +555,9 @@ class BatchTTS(QWidget):
             'streaming_mode': False,  # 强制关闭流式传输
             'seed': preset_config.get('seed', -1),
             'parallel_infer': preset_config.get('parallel_infer', True),
-            'repetition_penalty': preset_config.get('repetition_penalty', 1.35)
+            'repetition_penalty': preset_config.get('repetition_penalty', 1.35),
+            "sample_steps": preset_config.get('sample_steps', 32),
+            "super_sampling": preset_config.get('super_sampling', False),
         }
 
         gpt_model = preset_config.get('gpt_model')

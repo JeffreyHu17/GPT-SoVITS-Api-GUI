@@ -130,7 +130,7 @@ class GSVApiGUI(QWidget):
         base_width, base_height = 800, 800
         scaled_width = int(base_width * scaling_factor)
         scaled_height = int(base_height * scaling_factor)
-        self.setWindowTitle(self.tr('GSV Api GUI v0.3.1   by  领航员未鸟'))
+        self.setWindowTitle(self.tr('GSV Api GUI v0.3.2   by  领航员未鸟'))
         self.setGeometry(100, 100, scaled_width, scaled_height)
 
         # Scale the font, in theory this is redundant but there are strange special cases
