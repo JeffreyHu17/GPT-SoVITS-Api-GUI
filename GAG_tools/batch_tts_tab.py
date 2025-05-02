@@ -536,13 +536,20 @@ class BatchTTS(QWidget):
         preset_name = self.preset_combo.currentText()
         preset_config = self.config_manager.get_value('presets', {}).get(preset_name, {})
 
+        def is_prompt_required_model(model_path):
+            PROMPT_REQUIRED_VERSIONS = {'SoVITS_weights_v3', 'SoVITS_weights_v4'}
+            if not model_path:
+                return False
+            dir_name = os.path.basename(os.path.dirname(model_path))
+            return dir_name in PROMPT_REQUIRED_VERSIONS
+
         # Prepare request parameters
         params = {
             'text': text,
             'text_lang': preset_config.get('text_lang', 'all_zh'),
             'ref_audio_path': preset_config.get('ref_audio_path', ''),
             'prompt_lang': preset_config.get('prompt_lang', 'all_zh'),
-            'prompt_text': '' if preset_config.get('no_prompt', False) and os.path.basename(os.path.dirname(preset_config.get('sovits_model'))) != 'SoVITS_weights_v3' else preset_config.get('prompt_text', ''),
+            'prompt_text': '' if preset_config.get('no_prompt', False) and not is_prompt_required_model(preset_config.get('sovits_model')) else preset_config.get('prompt_text', ''),
             'aux_ref_audio_paths': preset_config.get('aux_ref_audio_paths', []),
             'top_k': preset_config.get('top_k', 5),
             'top_p': preset_config.get('top_p', 1.0),

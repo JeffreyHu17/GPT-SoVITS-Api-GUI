@@ -250,12 +250,12 @@
         <translation>Error processing file: {}</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/batch_tts_tab.py" line="584"/>
+        <location filename="../GAG_tools/batch_tts_tab.py" line="593"/>
         <source>API错误: {}</source>
         <translation>API Error: {}</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/batch_tts_tab.py" line="589"/>
+        <location filename="../GAG_tools/batch_tts_tab.py" line="598"/>
         <source>合成尝试失败: {}</source>
         <translation>Synthesis attempt failed: {}</translation>
     </message>
@@ -285,7 +285,12 @@
     <message>
         <location filename="../gsv_api_gui.py" line="133"/>
         <source>GSV Api GUI v0.3.1   by  领航员未鸟</source>
-        <translation>GSV Api GUI v0.3.1   by  领航员未鸟</translation>
+        <translation type="obsolete">GSV Api GUI v0.3.1   by  领航员未鸟</translation>
+    </message>
+    <message>
+        <location filename="../gsv_api_gui.py" line="133"/>
+        <source>GSV Api GUI v0.4.0   by  领航员未鸟</source>
+        <translation>GSV Api GUI v0.4.0   by  领航员未鸟</translation>
     </message>
 </context>
 <context>
@@ -396,32 +401,32 @@
         <translation>Multi-Language Mixed (Cantonese)</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="192"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="195"/>
         <source>TTS GUI</source>
         <translation>TTS GUI</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="202"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="205"/>
         <source>API 设置</source>
         <translation>API Settings</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="603"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="606"/>
         <source>状态: API 未就绪</source>
         <translation>Status: API Not Ready</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="206"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="209"/>
         <source>检查</source>
         <translation>Check</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="208"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="211"/>
         <source>API URL:</source>
         <translation>API URL:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="216"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="219"/>
         <source>待合成文本:</source>
         <translation>Text to Synthesize:</translation>
     </message>
@@ -453,172 +458,172 @@ GitHub: https://github.com/AliceNavigator/GPT-SoVITS-Api-GUI        by 领航员
 </translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="242"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="245"/>
         <source>控制</source>
         <translation>Control</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="249"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="252"/>
         <source>将会把合成的音频保存在该路径下...</source>
         <translation>Synthesized audio will be saved to this path...</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="417"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="420"/>
         <source>浏览</source>
         <translation>Browse</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="252"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="255"/>
         <source>打开</source>
         <translation>Open</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="254"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="257"/>
         <source>保存路径:</source>
         <translation>Save Path:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="262"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="265"/>
         <source>开始合成</source>
         <translation>Start Synthesis</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="841"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="844"/>
         <source>播放</source>
         <translation>Play</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="269"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="272"/>
         <source>保存音频</source>
         <translation>Save Audio</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="307"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="310"/>
         <source>预设</source>
         <translation>Preset</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="321"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="324"/>
         <source>保存</source>
         <translation>Save</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="322"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="325"/>
         <source>删除</source>
         <translation>Delete</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="333"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="336"/>
         <source>模型选择</source>
         <translation>Model Selection</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="342"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="345"/>
         <source>GPT 模型:</source>
         <translation>GPT Model:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="349"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="352"/>
         <source>SoVITS 模型:</source>
         <translation>SoVITS Model:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="358"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="361"/>
         <source>语言与文本设置</source>
         <translation>Language and Text Settings</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="370"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="373"/>
         <source>合成文本语种:</source>
         <translation>Text Language:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="376"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="379"/>
         <source>参考音频语种:</source>
         <translation>Reference Audio Language:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="382"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="385"/>
         <source>文本分割方式:</source>
         <translation>Text Split Method:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="390"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="393"/>
         <source>3-10秒的参考音频，超过会报错</source>
         <translation>3-10 second reference audio, longer will cause error</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="396"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="399"/>
         <source>参考音频:</source>
         <translation>Reference Audio:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="404"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="407"/>
         <source>不填则视为使用无参考文本模式</source>
         <translation>Empty means using no-reference text mode</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="405"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="408"/>
         <source>无参  </source>
         <translation>No Reference</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="408"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="411"/>
         <source>参考音频文本:</source>
         <translation>Reference Audio Text:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="416"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="419"/>
         <source>(可选)以额外的多个音频平均融合音色</source>
         <translation>(Optional) Average multiple audio files to blend voice characteristics</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="422"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="425"/>
         <source>辅助参考音频:</source>
         <translation>Auxiliary Reference Audio:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="432"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="435"/>
         <source>合成参数</source>
         <translation>Synthesis Parameters</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="449"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="452"/>
         <source>Top K:</source>
         <translation>Top K:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="451"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="454"/>
         <source>Top P:</source>
         <translation>Top P:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="453"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="456"/>
         <source>Temperature:</source>
         <translation>Temperature:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="465"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="468"/>
         <source>语速:</source>
         <translation>Speech Factor:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="467"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="470"/>
         <source>重复惩罚:</source>
         <translation>Repetition Penalty:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="469"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="472"/>
         <source>种子:</source>
         <translation>Seed:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="476"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="479"/>
         <source>并行推理</source>
         <translation>Parallel Infer</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="477"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="480"/>
         <source>数据分桶</source>
         <translation>Split Bucket</translation>
     </message>
@@ -633,192 +638,192 @@ GitHub: https://github.com/AliceNavigator/GPT-SoVITS-Api-GUI        by 领航员
         <translation type="obsolete">Streaming Mode</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="505"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="508"/>
         <source>批次大小:</source>
         <translation>Batch Size:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="507"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="510"/>
         <source>分批阈值:</source>
         <translation>Batch Threshold:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="517"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="520"/>
         <source>CPU 占用:</source>
         <translation>CPU Usage   :</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="525"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="528"/>
         <source>内存占用:</source>
         <translation>Memory Usage:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="992"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="995"/>
         <source>错误</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="548"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="551"/>
         <source>指定的保存文件夹不存在</source>
         <translation>Specified save folder does not exist</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="556"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="559"/>
         <source>选择音频文件</source>
         <translation>Select Audio File</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="556"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="559"/>
         <source>Audio Files (*.wav)</source>
         <translation>Audio Files (*.wav)</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="585"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="588"/>
         <source>状态: 检查中...</source>
         <translation>Status: Checking...</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="599"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="602"/>
         <source>状态: API 就绪</source>
         <translation>Status: API Ready</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="606"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="609"/>
         <source>API 错误</source>
         <translation>API Error</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="622"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="625"/>
         <source>{:.2f} GB / {:.2f} GB</source>
         <translation>{:.2f} GB / {:.2f} GB</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="725"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="728"/>
         <source>未检测到模型变更</source>
         <translation>No model changes detected</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="732"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="735"/>
         <source>模型切换时出错</source>
         <translation>Error during model switch</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="753"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="756"/>
         <source>请先输入需要合成的文本!</source>
         <translation>Please enter text for synthesis first!</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="762"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="765"/>
         <source>合成中...</source>
         <translation>Synthesizing...</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="775"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="778"/>
         <source>合成成功!</source>
         <translation>Synthesis Successful!</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="781"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="784"/>
         <source>合成失败!</source>
         <translation>Synthesis Failed!</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="782"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="785"/>
         <source>合成语音失败</source>
         <translation>Synthesis Failed</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="836"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="839"/>
         <source>停止</source>
         <translation>Stop</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="839"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="842"/>
         <source>尝试播放时出错: {}</source>
         <translation>Error while attempting playback: {}</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="977"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="980"/>
         <source>警告</source>
         <translation>Warning</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="860"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="863"/>
         <source>请先设置音频保存的路径。</source>
         <translation>Please set the audio save path first.</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="868"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="871"/>
         <source>目录不存在</source>
         <translation>Directory does not exist</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="868"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="871"/>
         <source> {} 不存在， 是否尝试新建该文件夹？</source>
         <translation>{} does not exist. Attempt to create new folder?</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="881"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="884"/>
         <source>音频保存至 {}</source>
         <translation>Audio saved to {}</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="883"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="886"/>
         <source>保存音频时出错: {}</source>
         <translation>Error saving audio: {}</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="886"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="889"/>
         <source>选择保存目录</source>
         <translation>Select Save Directory</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="938"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="941"/>
         <source>保存预设</source>
         <translation>Save Preset</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="938"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="941"/>
         <source>输入预设名:</source>
         <translation>Enter Preset Name:</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="989"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="992"/>
         <source>成功</source>
         <translation>Success</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="971"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="974"/>
         <source>已成功将当前参数保存为 &apos;{}&apos; !</source>
         <translation>Current parameters successfully saved as &apos;{}&apos;!</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="977"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="980"/>
         <source>默认预设不能被删除!</source>
         <translation>Default preset cannot be deleted!</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="981"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="984"/>
         <source>删除预设</source>
         <translation>Delete Preset</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="981"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="984"/>
         <source>确认删除当前预设 &quot;{}&quot;?</source>
         <translation>Confirm deletion of current preset &quot;{}&quot;?</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="989"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="992"/>
         <source>预设 &apos;{}&apos; 已被成功删除!</source>
         <translation>Preset &apos;{}&apos; successfully deleted!</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="992"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="995"/>
         <source>删除预设 &apos;{}&apos; 失败!</source>
         <translation>Failed to delete preset &apos;{}&apos;!</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="1031"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="1034"/>
         <source>清理缓存时出错 {}: {}</source>
         <translation>Error clearing cache {}: {}</translation>
     </message>
@@ -836,7 +841,7 @@ GitHub: https://github.com/AliceNavigator/GPT-SoVITS-Api-GUI        by 领航员
 
 GitHub开源地址: https://github.com/AliceNavigator/GPT-SoVITS-Api-GUI           by  领航员未鸟
 </source>
-        <translation>Enter text to synthesize here...
+        <translation type="obsolete">Enter text to synthesize here...
 
 Usage:
 1. Place this exe in the v3lora-20250401 official integrated package(or a newer version) directory and double-click to start.
@@ -849,14 +854,40 @@ Additionally, if no NVIDIA GPU is available and the official integrated package 
 GitHub: https://github.com/AliceNavigator/GPT-SoVITS-Api-GUI        by 领航员未鸟</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="478"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="481"/>
         <source>音频超分</source>
         <translation>Super Sampling</translation>
     </message>
     <message>
-        <location filename="../GAG_tools/tts_gui_tab.py" line="487"/>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="490"/>
         <source>采样步数:</source>
         <translation>Sample Steps:</translation>
+    </message>
+    <message>
+        <location filename="../GAG_tools/tts_gui_tab.py" line="227"/>
+        <source>在这里输入需要合成的文本...
+
+使用方法：
+1.将本exe放入GPT-SoVITS-v4-20250422fix或更新的官方整合包下，双击启动，支持v1，v2，v3, v4模型。
+2.将读取并使用GPT_weights，_v2，_v3, _v4与SoVITS_weights，_v2，_v3, _v4下的模型，请先完成训练获得模型。
+3.保存预设将保存当前所有合成参数设定，可视为一个说话人，后续可快速切换，亦可用于批量合成页面。
+4.默认使用整合包自带环境来调起并使用API，也可以在API管理页面自定义。
+
+此外，若无可用N卡并使用官方整合包，请在初次启动前修改GPT_SoVITS/configs/tts_infer.yaml中的device为cpu, is_half为false 以避免API启动失败。
+
+GitHub开源地址: https://github.com/AliceNavigator/GPT-SoVITS-Api-GUI           by  领航员未鸟
+</source>
+        <translation>Enter text to synthesize here...
+
+Usage:
+1. Place this exe in the v4-20250422fix official integrated package(or a newer version) directory and double-click to start.
+2. Loads models from GPT_weights,v2/v3/v4 and SoVITS_weights,v2/v3/v4 folders. Please complete training to obtain models first.
+3. Saving presets will store all current synthesis settings, which can be treated as a speaker profile for quick switching and batch synthesis.
+4. By default, it uses the integrated package&apos;s built-in environment to call and use the API, but you can customize this in the API Management page.
+
+Additionally, if no NVIDIA GPU is available and the official integrated package is used, modify the device to &quot;cpu&quot; and set is_half to &quot;false&quot; in GPT_SoVITS/configs/tts_infer.yaml before the initial launch to prevent API startup failures.
+
+GitHub: https://github.com/AliceNavigator/GPT-SoVITS-Api-GUI        by 领航员未鸟</translation>
     </message>
 </context>
 <context>
