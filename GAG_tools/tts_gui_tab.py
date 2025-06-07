@@ -144,12 +144,16 @@ class TTSGUI(QMainWindow):
         self.GPT_DIRS = [
             ('GPT_weights', 'v1'),
             ('GPT_weights_v2', 'v2'),
+            ('GPT_weights_v2Pro', 'v2p'),
+            ('GPT_weights_v2ProPlus', 'v2pp'),
             ('GPT_weights_v3', 'v3'),
             ('GPT_weights_v4', 'v4')
         ]
         self.SOVITS_DIRS = [
             ('SoVITS_weights', 'v1'),
             ('SoVITS_weights_v2', 'v2'),
+            ('SoVITS_weights_v2Pro', 'v2p'),
+            ('SoVITS_weights_v2ProPlus', 'v2pp'),
             ('SoVITS_weights_v3', 'v3'),
             ('SoVITS_weights_v4', 'v4')
         ]
@@ -157,12 +161,16 @@ class TTSGUI(QMainWindow):
             'sovits': {
                 'v1': ['sample_steps', 'super_sampling'],
                 'v2': ['sample_steps', 'super_sampling'],
+                'v2p': ['sample_steps', 'super_sampling'],
+                'v2pp': ['sample_steps', 'super_sampling'],
                 'v3': ['aux_ref_audio_paths', 'no_prompt'],
                 'v4': ['aux_ref_audio_paths', 'no_prompt', 'super_sampling'],
             },
             'gpt': {
                 'v1': [],
                 'v2': [],
+                'v2p': [],
+                'v2pp': [],
                 'v3': [],
                 'v4': [],
             }
@@ -226,8 +234,8 @@ class TTSGUI(QMainWindow):
         self.text_input.setPlaceholderText(
             self.tr("在这里输入需要合成的文本..."
                     "\n\n使用方法：\n"
-                    "1.将本exe放入GPT-SoVITS-v4-20250422fix或更新的官方整合包下，双击启动，支持v1，v2，v3, v4模型。\n"
-                    "2.将读取并使用GPT_weights，_v2，_v3, _v4与SoVITS_weights，_v2，_v3, _v4下的模型，请先完成训练获得模型。\n"
+                    "1.将本exe放入GPT-SoVITS-v2pro-20250604或更新的官方整合包下，双击启动，支持v1，v2，v2p，v2pp，v3，v4模型。\n"
+                    "2.将读取并使用GPT_weights，_v2，_v2Pro，_v2ProPlus，_v3, _v4与SoVITS_weights，_v2，_v2Pro，_v2ProPlus，_v3, _v4下的模型，请先完成训练获得模型。\n"
                     "3.保存预设将保存当前所有合成参数设定，可视为一个说话人，后续可快速切换，亦可用于批量合成页面。\n"
                     "4.默认使用整合包自带环境来调起并使用API，也可以在API管理页面自定义。\n"
                     "\n此外，若无可用N卡并使用官方整合包，请在初次启动前修改GPT_SoVITS/configs/tts_infer.yaml中的device为cpu, is_half为false 以避免API启动失败。"
@@ -499,7 +507,7 @@ class TTSGUI(QMainWindow):
         # Batch settings
         batch_layout = QGridLayout()
         self.param_widgets['batch_size'] = QSpinBox()
-        self.param_widgets['batch_size'].setRange(1, 10)
+        self.param_widgets['batch_size'].setRange(1, 1000)
         self.param_widgets['batch_threshold'] = QDoubleSpinBox()
         self.param_widgets['batch_threshold'].setRange(0, 1)
         self.param_widgets['batch_threshold'].setSingleStep(0.05)
