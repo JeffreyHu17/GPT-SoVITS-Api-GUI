@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QFont
 from GAG_tools.config_manager import ConfigManager
+import urllib.parse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -199,6 +200,7 @@ class APIManager(QWidget):
             return
 
         python_path = self.python_path_input.text()
+        self.config_manager.update_config({'api_url': self.url_input.text()})
         self.output_console.clear()
         if not os.path.exists(python_path):
             QMessageBox.warning(
@@ -209,6 +211,19 @@ class APIManager(QWidget):
             return
 
         try:
+            api_url = self.config_manager.get_value('api_url', 'http://127.0.0.1:9880')
+            try:
+                if not api_url.startswith(('http://', 'https://')):
+                    api_url = 'http://' + api_url
+
+                parsed = urllib.parse.urlparse(api_url)
+                host = parsed.hostname or '127.0.0.1'
+                port = str(parsed.port) if parsed.port else '9880'
+            except Exception as e:
+                logger.warning(f"Failed to parse API URL {api_url}, using defaults: {e}")
+                host = '127.0.0.1'
+                port = '9880'
+
             # Add Python directory to PATH
             env = os.environ.copy()
             python_dir = os.path.dirname(python_path)
@@ -222,7 +237,7 @@ class APIManager(QWidget):
 
             # Create process
             self.process = subprocess.Popen(
-                [python_path, "api_v2.py", "-a", "127.0.0.1", "-p", "9880"],
+                [python_path, "api_v2.py", "-a", host, "-p", port],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 env={**env, "PYTHONIOENCODING": "utf-8"},
