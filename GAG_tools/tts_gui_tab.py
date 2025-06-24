@@ -2,7 +2,7 @@ import sys
 import os
 import re
 import time
-import psutil
+# import psutil
 import shutil
 import requests
 import sounddevice as sd
@@ -13,10 +13,213 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox,
                              QSpinBox, QDoubleSpinBox, QCheckBox, QTextEdit,
                              QFileDialog, QGroupBox, QMessageBox, QStatusBar, QInputDialog, QGridLayout,
-                             QProgressBar, QFormLayout)
+                             QFormLayout, QSizePolicy)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QUrl, QFileSystemWatcher, QTimer
 from GAG_tools.config_manager import ConfigManager
+import numpy as np
+import pyqtgraph as pg
+from pyqtgraph import PlotWidget
 import resources_rc
+
+
+class WaveformWidget(PlotWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        if parent and hasattr(parent, 'config_manager'):
+            self.MAX_WAVE_DISPLAY_POINTS = parent.config_manager.get_value('MAX_WAVE_DISPLAY_POINTS', 2500)
+        else:
+            self.MAX_WAVE_DISPLAY_POINTS = 2500
+        self.setBackground(None)
+        self.setStyleSheet("background: transparent;")
+        self.setMouseEnabled(x=True, y=False)
+        self.setMenuEnabled(False)
+
+        self.plotItem.vb.setMouseEnabled(x=False, y=False)
+        self.plotItem.vb.setMenuEnabled(False)
+        self.plotItem.setMouseEnabled(x=True, y=False)
+
+        self.plotItem.showAxis('left', False)
+        self.hideButtons()
+        self.plotItem.getAxis('bottom').setPen(pg.mkPen(color=(100, 100, 100, 60)))
+        self.plotItem.getAxis('bottom').setTextPen(pg.mkPen(color=(100, 100, 100, 60)))
+
+        # Waveform
+        self.waveform_plot = self.plot(
+            pen=pg.mkPen(
+                color=(30, 144, 255, 175),
+                width=1.2,
+                cosmetic=True
+            ),
+            fillLevel=0,
+            antialias=True
+        )
+        self.waveform_plot.setZValue(10)
+
+        gradient = pg.ColorMap(
+            [0, 0.5, 1],
+            [
+                (30, 144, 255, 80),
+                (0, 191, 255, 120),
+                (100, 149, 237, 80)
+            ]
+        ).getBrush(span=(0, 1))
+        self.waveform_plot.setBrush(gradient)
+
+        # Selection_region
+        self.selection_region = pg.LinearRegionItem(
+            brush=pg.mkBrush(30, 144, 255, 80),
+            pen=pg.mkPen((30, 144, 255), width=1.5)
+        )
+        self.selection_region.setZValue(20)
+        self.selection_region.hide()
+        self.addItem(self.selection_region)
+
+        # Cursor_line
+        self.cursor_line = pg.InfiniteLine(
+            angle=90,
+            pen=pg.mkPen(color=(255, 69, 0, 200), width=1.5, cosmetic=True),
+            hoverPen=pg.mkPen(color=(255, 69, 0, 255), width=2, cosmetic=True)
+        )
+        self.cursor_line.setZValue(30)
+        self.addItem(self.cursor_line)
+
+        # Zero_line
+        self.zero_line = pg.InfiniteLine(
+            pos=0,
+            angle=0,
+            pen=pg.mkPen(color=(30, 144, 255, 50), width=0.8, cosmetic=True)
+        )
+        self.addItem(self.zero_line)
+
+        self.duration = 0
+        self.audio_peak = 1.0
+        self.selecting = False
+        self.selection_start = 0
+        self.mouse_pressed = False
+        self.auto_scroll = True
+        self.show_demo_waveform()
+
+    def _downsample(self, data):
+        n = len(data)
+        if n <= self.MAX_WAVE_DISPLAY_POINTS:
+            return np.linspace(0, self.duration, n), data
+
+        step = max(1, n // self.MAX_WAVE_DISPLAY_POINTS)
+        chunks = n // step
+        reshaped = data[:chunks * step].reshape(chunks, step)
+        avg_vals = reshaped.mean(axis=1)
+
+        x = np.linspace(0, self.duration, chunks)
+        y = avg_vals
+        return x, y
+
+    def load_audio(self, file_path, reset_view=False):
+        try:
+            data, sample_rate = sf.read(file_path)
+            if len(data.shape) > 1:
+                data = data.mean(axis=1)
+            self.duration = len(data) / sample_rate
+
+            x, y = self._downsample(data)
+            self.waveform_plot.setData(x, y)
+
+            self.plotItem.vb.setLimits(
+                xMin=0,
+                xMax=self.duration,
+                minXRange=min(self.duration, 0.1),
+                maxXRange=self.duration
+            )
+
+            self.audio_peak = np.max(np.abs(y)) if len(y) > 0 else 1.0
+            self.setYRange(-self.audio_peak, self.audio_peak, padding=0.01)
+
+            current_view = self.plotItem.viewRange()[0]
+            if reset_view:
+                self.setXRange(0, self.duration, padding=0)
+            else:
+                self.setXRange(current_view[0], current_view[1], padding=0)
+
+            self.cursor_line.setValue(0)
+            self.selection_region.hide()
+            return True
+        except Exception as e:
+            print(f"Error loading audio: {str(e)}")
+            return False
+
+    def mousePressEvent(self, event):
+        pos = self.plotItem.vb.mapSceneToView(event.pos())
+        x = max(0, min(pos.x(), self.duration))
+
+        if event.button() == Qt.RightButton:
+            event.accept()
+            self.mouse_pressed = True
+            self.selection_start = x
+            self.selection_region.setRegion([x, x])
+            self.selection_region.show()
+            self.selecting = True
+        elif event.button() == Qt.LeftButton:
+            super().mousePressEvent(event)
+            self.cursor_line.setValue(x)
+
+            if hasattr(self.parent(), 'play_audio_from'):
+                self.parent().play_audio_from(x)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.RightButton:
+            self.mouse_pressed = False
+            region = self.selection_region.getRegion()
+            if region[0] == region[1]:
+                self.selection_region.hide()
+            event.accept()
+        else:
+            super().mouseReleaseEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() & Qt.RightButton:
+            pos = self.plotItem.vb.mapSceneToView(event.pos())
+            end = max(0, min(pos.x(), self.duration))
+            self.selection_region.setRegion([self.selection_start, end])
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+
+    def get_selection(self):
+        if self.selection_region.isVisible():
+            return sorted(self.selection_region.getRegion())
+        return None
+
+    def get_cursor_position(self):
+        return self.cursor_line.value()
+
+    def update_cursor_during_playback(self, position):
+        self.cursor_line.setValue(position)
+
+        if self.auto_scroll:
+            view_range = self.plotItem.viewRange()[0]
+            visible_width = view_range[1] - view_range[0]
+            scroll_margin = visible_width * 0.2  # ~20%
+
+            if position > view_range[1] - scroll_margin:
+                new_left = position - visible_width * 0.8
+                new_right = new_left + visible_width
+                self.setXRange(new_left, new_right, padding=0)
+
+    @staticmethod
+    def generate_demo_waveform(duration=2.0, sample_rate=44100):
+        t = np.linspace(0, duration, int(duration * sample_rate))
+        wave = np.sin(2 * np.pi * 3 * t) * np.sin(np.pi * t / duration)
+        return wave * 0.8
+
+    def show_demo_waveform(self):
+        self.duration = 2
+        x, y = self._downsample(self.generate_demo_waveform(duration=self.duration))
+        self.waveform_plot.setData(x, y)
+        self.audio_peak = np.max(np.abs(y)) if len(y) > 0 else 1.0
+        self.setXRange(0, self.duration, padding=0)
+        self.setYRange(-self.audio_peak, self.audio_peak, padding=0.01)
+        self.plotItem.vb.setLimits(xMin=0, xMax=self.duration, minXRange=min(self.duration, 0.1), maxXRange=self.duration)
+        self.cursor_line.setValue(0)
+        self.selection_region.hide()
 
 
 class ModelSwitchThread(QThread):
@@ -109,6 +312,8 @@ class APICheckThread(QThread):
 
 
 class TTSGUI(QMainWindow):
+    stop_playback_signal = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.param_widgets = None
@@ -131,7 +336,7 @@ class TTSGUI(QMainWindow):
             'yue': self.tr('粤英混合'),
             'ko': self.tr('韩英混合'),
             'auto': self.tr('多语种混合'),
-            'auto_yue': self.tr('多语种混合(粤语)')
+            'auto_yue': self.tr('多语种混合(粤)')
         }
         self.SAMPLE_STEPS = {
             4: '4',
@@ -184,6 +389,18 @@ class TTSGUI(QMainWindow):
         self.gpt_switching = False
         self.sovits_switching = False
         self.synthesis_pending = False
+        self.edit_stack = []
+        self.redo_stack = []
+        self.play_position = 0
+        self.audio_cache = {}
+        self.cursor_update_timer = QTimer(self)
+        self.cursor_update_timer.timeout.connect(self.update_playback_cursor)
+        self.cursor_update_timer.setInterval(16)  # ~60fps
+        self.stop_playback_signal.connect(self.handle_playback_stop)
+        self.api_check_delay_timer = QTimer(self)
+        self.api_check_delay_timer.setSingleShot(True)
+        self.api_check_delay_timer.setInterval(800)
+        self.api_check_delay_timer.timeout.connect(self.on_api_url_changed)
         self.watcher = QFileSystemWatcher(self)
         for dir_info in self.GPT_DIRS + self.SOVITS_DIRS:
             dir_name = dir_info[0]
@@ -194,7 +411,8 @@ class TTSGUI(QMainWindow):
         self.setAutoFillBackground(True)
         self.setup_background()
         self.initUI()
-        self.start_system_monitoring()
+        self.setup_edit_actions()
+        # self.start_system_monitoring()  # Uncomment the System Monitoring section if you want to use it.
         self.api_check_thread = None
         self.autostart_api_check()
 
@@ -209,18 +427,11 @@ class TTSGUI(QMainWindow):
         main_layout = QVBoxLayout(central_widget)
 
         # API settings group
-        api_group = QGroupBox(self.tr("API 设置"))
-        api_layout = QHBoxLayout()
         self.api_url_input = QLineEdit(self.config_manager.get_value('api_url'))
+        self.api_url_input.textChanged.connect(self.start_api_check_delay)
         self.api_status_label = QLabel(self.tr("状态: API 未就绪"))
         self.check_api_button = QPushButton(self.tr("检查"))
-        self.check_api_button.clicked.connect(self.check_api_status)
-        api_layout.addWidget(QLabel(self.tr("API URL:")))
-        api_layout.addWidget(self.api_url_input)
-        api_layout.addWidget(self.api_status_label)
-        api_layout.addWidget(self.check_api_button)
-        api_group.setLayout(api_layout)
-        main_layout.addWidget(api_group)
+        self.check_api_button.clicked.connect(self.check_api_status_manually)
 
         # Parameter settings group
         params_group = QGroupBox(self.tr("待合成文本:"))
@@ -248,14 +459,49 @@ class TTSGUI(QMainWindow):
         params_group.setLayout(params_layout)
         main_layout.addWidget(params_group)
 
-        # Control button group
-        control_group = QGroupBox(self.tr("控制"))
-        control_layout = QVBoxLayout()
+        # Control edit group
+        control_edit_group = QGroupBox(self.tr("合成与编辑"))
+        control_edit_layout = QVBoxLayout()
+        control_edit_group.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+
+        # Delete & mute
+        edit_buttons_layout = QHBoxLayout()
+        self.delete_button = QPushButton(self.tr("删除选中"))
+        self.delete_button.clicked.connect(self.delete_selection)
+        self.mute_button = QPushButton(self.tr("静音选中"))
+        self.mute_button.clicked.connect(self.mute_selection)
+
+        # Silence insertion
+        self.silence_spin = QSpinBox()
+        self.silence_spin.setRange(10, 10000)  # 10ms to 10s
+        self.silence_spin.setValue(300)
+        self.silence_spin.setSuffix(" ms")
+        self.insert_silence_button = QPushButton(self.tr("插入静音"))
+        self.insert_silence_button.clicked.connect(self.insert_silence)
+
+        # Undo/redo
+        self.undo_button = QPushButton(self.tr("撤销"))
+        self.undo_button.clicked.connect(self.undo_edit)
+        self.redo_button = QPushButton(self.tr("重做"))
+        self.redo_button.clicked.connect(self.redo_edit)
+
+        edit_buttons_layout.addWidget(self.delete_button)
+        edit_buttons_layout.addWidget(self.mute_button)
+        edit_buttons_layout.addWidget(QLabel(self.tr("静音时长:")))
+        edit_buttons_layout.addWidget(self.silence_spin)
+        edit_buttons_layout.addWidget(self.insert_silence_button)
+        edit_buttons_layout.addWidget(self.undo_button)
+        edit_buttons_layout.addWidget(self.redo_button)
+        control_edit_layout.addLayout(edit_buttons_layout)
+
+        # Waveform display
+        self.waveform = WaveformWidget(self)
+        self.waveform.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Fixed)
+        control_edit_layout.addWidget(self.waveform)
 
         # Save path settings
         path_layout = QHBoxLayout()
         self.save_path_input = QLineEdit(self.config_manager.get_value('save_directory'))
-        # self.save_path_input.setReadOnly(True)
         self.save_path_input.setPlaceholderText(self.tr("将会把合成的音频保存在该路径下..."))
         self.browse_button = QPushButton(self.tr("浏览"))
         self.browse_button.clicked.connect(self.set_save_path)
@@ -265,9 +511,9 @@ class TTSGUI(QMainWindow):
         path_layout.addWidget(self.save_path_input)
         path_layout.addWidget(self.browse_button)
         path_layout.addWidget(self.open_save_directory_button)
-        control_layout.addLayout(path_layout)
+        control_edit_layout.addLayout(path_layout)
 
-        # Existing control buttons
+        # Control buttons
         buttons_layout = QHBoxLayout()
         self.synthesize_button = QPushButton(self.tr("开始合成"))
         self.synthesize_button.setStyleSheet("min-height: 20px;")
@@ -282,10 +528,10 @@ class TTSGUI(QMainWindow):
         buttons_layout.addWidget(self.synthesize_button)
         buttons_layout.addWidget(self.play_button)
         buttons_layout.addWidget(self.save_button)
-        control_layout.addLayout(buttons_layout)
+        control_edit_layout.addLayout(buttons_layout)
 
-        control_group.setLayout(control_layout)
-        main_layout.addWidget(control_group)
+        control_edit_group.setLayout(control_edit_layout)
+        main_layout.addWidget(control_edit_group)
 
         # Status bar
         self.statusBar = QStatusBar()
@@ -301,7 +547,7 @@ class TTSGUI(QMainWindow):
         self.setup_group_box_styles()
 
     def create_parameter_inputs(self, layout):
-        # All parameters in param_widgets will be used as request parameters.
+        """All parameters in param_widgets will be used as request parameters."""
         self.param_widgets = {}
 
         # Create main horizontal layout to utilize screen width
@@ -369,21 +615,23 @@ class TTSGUI(QMainWindow):
         lang_layout = QVBoxLayout()
         lang_layout.setSpacing(8)
 
-        # Language settings in form layout
+        # Text & Prompt lang
         lang_form = QFormLayout()
         lang_form.setSpacing(8)
+        lang_row = QHBoxLayout()
 
-        # Text language
+        lang_row.addWidget(QLabel(self.tr("合成文本语种:")))
         self.param_widgets['text_lang'] = QComboBox()
         for key, value in self.LANGUAGES.items():
             self.param_widgets['text_lang'].addItem(value, key)
-        lang_form.addRow(self.tr("合成文本语种:"), self.param_widgets['text_lang'])
+        lang_row.addWidget(self.param_widgets['text_lang'])
 
-        # Prompt language
+        lang_row.addWidget(QLabel(self.tr("参考音频语种:")))
         self.param_widgets['prompt_lang'] = QComboBox()
         for key, value in self.LANGUAGES.items():
             self.param_widgets['prompt_lang'].addItem(value, key)
-        lang_form.addRow(self.tr("参考音频语种:"), self.param_widgets['prompt_lang'])
+        lang_row.addWidget(self.param_widgets['prompt_lang'])
+        lang_form.addRow(lang_row)
 
         # Text split method
         self.param_widgets['text_split_method'] = QComboBox()
@@ -441,6 +689,14 @@ class TTSGUI(QMainWindow):
         # Right side - Generation Parameters
         gen_group = QGroupBox(self.tr("合成参数"))
         gen_layout = QVBoxLayout()
+
+        # API settings
+        api_layout = QHBoxLayout()
+        api_layout.addWidget(QLabel(self.tr("API URL:")))
+        api_layout.addWidget(self.api_url_input)
+        api_layout.addWidget(self.api_status_label)
+        api_layout.addWidget(self.check_api_button)
+        gen_layout.addLayout(api_layout)
 
         # Parameter grid
         param_grid = QGridLayout()
@@ -519,33 +775,33 @@ class TTSGUI(QMainWindow):
 
         gen_layout.addLayout(batch_layout)
 
-        # System monitoring
-        monitor_layout = QVBoxLayout()
-
-        # CPU usage
-        cpu_layout = QGridLayout()
-        cpu_layout.addWidget(QLabel(self.tr("CPU 占用:")), 0, 0)
-        self.cpu_progress = QProgressBar()
-        self.cpu_progress.setRange(0, 100)
-        cpu_layout.addWidget(self.cpu_progress, 0, 1)
-        monitor_layout.addLayout(cpu_layout)
-
-        # Memory usage
-        memory_layout = QGridLayout()
-        memory_layout.addWidget(QLabel(self.tr("内存占用:")), 1, 0)
-        self.memory_progress = QProgressBar()
-        self.memory_progress.setRange(0, 100)
-        self.memory_progress.setTextVisible(False)
-        memory_layout.addWidget(self.memory_progress, 1, 1)
-        self.memory_label = QLabel()
-        self.memory_label.setAlignment(Qt.AlignCenter)
-        memory_layout.addWidget(self.memory_label, 1, 1)
-        monitor_layout.addLayout(memory_layout)
-
-        gen_layout.addLayout(monitor_layout)
-        gen_group.setLayout(gen_layout)
+        # # System monitoring
+        # monitor_layout = QVBoxLayout()
+        #
+        # # CPU usage
+        # cpu_layout = QGridLayout()
+        # cpu_layout.addWidget(QLabel(self.tr("CPU 占用:")), 0, 0)
+        # self.cpu_progress = QProgressBar()
+        # self.cpu_progress.setRange(0, 100)
+        # cpu_layout.addWidget(self.cpu_progress, 0, 1)
+        # monitor_layout.addLayout(cpu_layout)
+        #
+        # # Memory usage
+        # memory_layout = QGridLayout()
+        # memory_layout.addWidget(QLabel(self.tr("内存占用:")), 1, 0)
+        # self.memory_progress = QProgressBar()
+        # self.memory_progress.setRange(0, 100)
+        # self.memory_progress.setTextVisible(False)
+        # memory_layout.addWidget(self.memory_progress, 1, 1)
+        # self.memory_label = QLabel()
+        # self.memory_label.setAlignment(Qt.AlignCenter)
+        # memory_layout.addWidget(self.memory_label, 1, 1)
+        # monitor_layout.addLayout(memory_layout)
+        #
+        # gen_layout.addLayout(monitor_layout)
 
         # Add right side to main layout
+        gen_group.setLayout(gen_layout)
         main_param_layout.addWidget(gen_group, stretch=1)
 
         # Add the main layout to the parent layout
@@ -568,21 +824,14 @@ class TTSGUI(QMainWindow):
             self.param_widgets[param_name].setText(';'.join(files))
 
     def autostart_api_check(self):
-        autostart = self.config_manager.get_value('autostart_api', False)
-        if not autostart:
-            return
+        self.on_api_url_changed()
 
-        self.check_api_button.setEnabled(False)
-        self.api_status_label.setText(self.tr("状态: 检查中..."))
-        self.api_check_thread = APICheckThread(
-            self.api_url_input.text(),
-            silent=True,
-            continuous=True
-        )
-        self.api_check_thread.status_signal.connect(self.handle_autostart_check)
-        self.api_check_thread.start()
+    def start_api_check_delay(self):
+        if self.config_manager.get_value('autostart_api', False):
+            self.api_check_delay_timer.stop()
+            self.api_check_delay_timer.start()
 
-    def handle_autostart_check(self, is_available, message):
+    def handle_autostart_api_check(self, is_available, message):
         if is_available:
             self.api_status_label.setText(self.tr("状态: API 就绪"))
             self.check_api_button.setEnabled(True)
@@ -591,7 +840,31 @@ class TTSGUI(QMainWindow):
                 self.api_check_thread.stop()
                 self.api_check_thread = None
 
-    def check_api_status(self):
+    def on_api_url_changed(self):
+        if not self.config_manager.get_value('autostart_api', False):
+            return
+
+        if self.api_check_thread:
+            self.api_check_thread.stop()
+            self.api_check_thread = None
+
+        current_url = self.api_url_input.text().strip()
+        if not current_url:
+            self.api_status_label.setText(self.tr("状态: URL为空"))
+            return
+
+        self.check_api_button.setEnabled(False)
+        self.api_status_label.setText(self.tr("状态: 检查中..."))
+
+        self.api_check_thread = APICheckThread(
+            current_url,
+            silent=True,
+            continuous=True
+        )
+        self.api_check_thread.status_signal.connect(self.handle_autostart_api_check)
+        self.api_check_thread.start()
+
+    def check_api_status_manually(self):
         self.api_status_label.setText(self.tr("状态: 检查中..."))
         self.check_api_button.setEnabled(False)
         self.synthesize_button.setEnabled(False)
@@ -601,10 +874,10 @@ class TTSGUI(QMainWindow):
             silent=False,
             continuous=False
         )
-        self.api_check_thread_once.status_signal.connect(self.update_api_status)
+        self.api_check_thread_once.status_signal.connect(self.handle_manually_api_check)
         self.api_check_thread_once.start()
 
-    def update_api_status(self, is_available, message):
+    def handle_manually_api_check(self, is_available, message):
         if is_available:
             self.api_status_label.setText(self.tr("状态: API 就绪"))
             self.check_api_button.setEnabled(True)
@@ -615,23 +888,23 @@ class TTSGUI(QMainWindow):
             self.synthesize_button.setEnabled(True)
             QMessageBox.warning(self, self.tr("API 错误"), message)
 
-    def start_system_monitoring(self):
-        self.monitor_timer = QTimer()
-        self.monitor_timer.timeout.connect(self.update_system_monitoring)
-        self.monitor_timer.start(1000)  # 1000ms
-
-    def update_system_monitoring(self):
-        cpu_percent = psutil.cpu_percent()
-        memory_info = psutil.virtual_memory()
-        memory_percent = memory_info.percent
-
-        self.cpu_progress.setValue(int(cpu_percent))
-
-        memory_used_gb = memory_info.used / (1024 ** 3)
-        memory_total_gb = memory_info.total / (1024 ** 3)
-        self.memory_label.setText(
-            self.tr("{:.2f} GB / {:.2f} GB").format(memory_used_gb, memory_total_gb))
-        self.memory_progress.setValue(int(memory_percent))
+    # def start_system_monitoring(self):
+    #     self.monitor_timer = QTimer()
+    #     self.monitor_timer.timeout.connect(self.update_system_monitoring)
+    #     self.monitor_timer.start(1000)  # 1000ms
+    #
+    # def update_system_monitoring(self):
+    #     cpu_percent = psutil.cpu_percent()
+    #     memory_info = psutil.virtual_memory()
+    #     memory_percent = memory_info.percent
+    #
+    #     self.cpu_progress.setValue(int(cpu_percent))
+    #
+    #     memory_used_gb = memory_info.used / (1024 ** 3)
+    #     memory_total_gb = memory_info.total / (1024 ** 3)
+    #     self.memory_label.setText(
+    #         self.tr("{:.2f} GB / {:.2f} GB").format(memory_used_gb, memory_total_gb))
+    #     self.memory_progress.setValue(int(memory_percent))
 
     def get_model_version(self, model_type):
         combo = self.gpt_combo if model_type == 'gpt' else self.sovits_combo
@@ -781,78 +1054,172 @@ class TTSGUI(QMainWindow):
 
     def synthesis_finished(self, audio_file):
         self.current_audio_file = audio_file
-        self.synthesize_button.setEnabled(True)
-        self.statusBar.showMessage(self.tr("合成成功!"))
-        self.play_button.setEnabled(True)
-        self.save_button.setEnabled(True)
+        self.audio_cache = {}
+        self.edit_stack = []
+        self.redo_stack = []
+
+        if self.waveform.load_audio(audio_file, reset_view=True):
+            self.synthesize_button.setEnabled(True)
+            self.statusBar.showMessage(self.tr("合成成功!"))
+            self.play_button.setEnabled(True)
+            self.save_button.setEnabled(True)
+            self.delete_button.setEnabled(True)
+            self.mute_button.setEnabled(True)
+            self.insert_silence_button.setEnabled(True)
+            self.undo_button.setEnabled(False)
+            self.redo_button.setEnabled(False)
+        else:
+            self.synthesis_error(self.tr("无法加载波形显示"))
+            self.synthesize_button.setEnabled(True)
+            self.play_button.setEnabled(True)
+            self.save_button.setEnabled(True)
 
     def synthesis_error(self, error_message):
         self.synthesize_button.setEnabled(True)
         self.statusBar.showMessage(self.tr("合成失败!"))
         QMessageBox.critical(self, self.tr("合成语音失败"), error_message)
 
+    def setup_edit_actions(self):
+        self.delete_button.setEnabled(False)
+        self.mute_button.setEnabled(False)
+        self.insert_silence_button.setEnabled(False)
+        self.undo_button.setEnabled(False)
+        self.redo_button.setEnabled(False)
+
+    def delete_selection(self):
+        selection = self.waveform.get_selection()
+        if not selection:
+            QMessageBox.warning(self, self.tr("警告"), self.tr("请先选择要删除的区域\n（右键拖拽选择区域）"))
+            return
+        try:
+            if self.current_audio_file in self.audio_cache:
+                data, sr = self.audio_cache[self.current_audio_file]
+            else:
+                data, sr = sf.read(self.current_audio_file)
+            start_sample = int(selection[0] * sr)
+            end_sample = int(selection[1] * sr)
+            new_data = np.concatenate([data[:start_sample], data[end_sample:]])
+            self.apply_edit(new_data, sr)
+
+        except Exception as e:
+            QMessageBox.critical(self, self.tr("错误"), self.tr("删除选区时出错: {}").format(str(e)))
+
+    def mute_selection(self):
+        selection = self.waveform.get_selection()
+        if not selection:
+            QMessageBox.warning(self, self.tr("警告"), self.tr("请先选择要静音的区域\n（右键拖拽选择区域）"))
+            return
+        try:
+            if self.current_audio_file in self.audio_cache:
+                data, sr = self.audio_cache[self.current_audio_file]
+            else:
+                data, sr = sf.read(self.current_audio_file)
+            start_sample = int(selection[0] * sr)
+            end_sample = int(selection[1] * sr)
+            if len(data.shape) > 1:
+                data[start_sample:end_sample] = 0
+            else:
+                data[start_sample:end_sample] = 0
+            self.apply_edit(data, sr)
+
+        except Exception as e:
+            QMessageBox.critical(self, self.tr("错误"), self.tr("静音选区时出错: {}").format(str(e)))
+
+    def insert_silence(self):
+        duration_ms = self.silence_spin.value()
+        duration_sec = duration_ms / 1000.0
+        cursor_pos = self.waveform.get_cursor_position()
+
+        try:
+            if self.current_audio_file in self.audio_cache:
+                data, sr = self.audio_cache[self.current_audio_file]
+            else:
+                data, sr = sf.read(self.current_audio_file)
+            silence_samples = int(duration_sec * sr)
+            silence = np.zeros(silence_samples)
+            insert_pos = int(cursor_pos * sr)
+
+            if len(data.shape) > 1:  # Stereo - need 2D silence
+                silence = np.zeros((silence_samples, data.shape[1]))
+
+            new_data = np.concatenate([data[:insert_pos], silence, data[insert_pos:]])
+            self.apply_edit(new_data, sr)
+
+        except Exception as e:
+            QMessageBox.critical(self, self.tr("错误"), self.tr("插入静音时出错: {}").format(str(e)))
+
+    def apply_edit(self, new_data, sample_rate):
+        try:
+            temp_file = os.path.join(self.cache_dir, f"edit_{int(time.time())}.wav")
+            sf.write(temp_file, new_data, sample_rate)
+            if self.current_audio_file in self.audio_cache:
+                del self.audio_cache[self.current_audio_file]
+            self.audio_cache[temp_file] = (new_data, sample_rate)
+            self.push_undo_state()
+            self.current_audio_file = temp_file
+            self.waveform.load_audio(temp_file, reset_view=False)
+            self.undo_button.setEnabled(len(self.edit_stack) > 0)
+            self.redo_button.setEnabled(False)
+
+        except Exception as e:
+            QMessageBox.critical(self, self.tr("错误"), self.tr("应用编辑时出错: {}").format(str(e)))
+
+    def push_undo_state(self):
+        if os.path.exists(self.current_audio_file):
+            self.edit_stack.append(self.current_audio_file)
+            self.redo_stack.clear()  # Clear redo stack on new action
+
+    def undo_edit(self):
+        if len(self.edit_stack) > 0:
+            self.redo_stack.append(self.current_audio_file)
+            prev_file = self.edit_stack.pop()
+            self.current_audio_file = prev_file
+            self.waveform.load_audio(prev_file, reset_view=False)
+            self.undo_button.setEnabled(len(self.edit_stack) > 0)
+            self.redo_button.setEnabled(True)
+        else:
+            QMessageBox.information(self, self.tr("信息"), self.tr("没有更多操作可以撤销"))
+
+    def redo_edit(self):
+        if len(self.redo_stack) > 0:
+            self.edit_stack.append(self.current_audio_file)
+            next_file = self.redo_stack.pop()
+            self.current_audio_file = next_file
+            self.waveform.load_audio(next_file, reset_view=False)
+            self.undo_button.setEnabled(True)
+            self.redo_button.setEnabled(len(self.redo_stack) > 0)
+        else:
+            QMessageBox.information(self, self.tr("信息"), self.tr("没有更多操作可以重做"))
+
     def play_audio(self):
         if not self.current_audio_file:
             return
 
         if self.is_playing:
-            # Stop playback
-            if hasattr(self, 'stream') and self.stream:
-                self.stream.stop()
-                self.stream.close()
-                delattr(self, 'stream')
-            self.is_playing = False
-            self.play_button.setText(self.tr("播放"))
+            self.stop_playback()
             return
 
-        try:
-            data, samplerate = sf.read(self.current_audio_file)
+        cursor_pos = self.waveform.get_cursor_position()
+        self.play_audio_from(cursor_pos)
 
-            # Ensure data is 2D (samples, channels)
-            if len(data.shape) == 1:
-                data = data.reshape(-1, 1)
+    def handle_playback_stop(self):
+        if self.cursor_update_timer.isActive():
+            self.cursor_update_timer.stop()
 
-            # Define callback function
-            def callback(outdata, frames, time, status):
-                if status:
-                    print('Status:', status)
-                # When playback is complete
-                if len(data) <= self.play_position + frames:
-                    self.is_playing = False
-                    self.play_button.setText(self.tr("播放"))
-                    self.play_position = 0
-                    raise sd.CallbackStop()
-                # Continue playback
-                current_chunk = data[self.play_position:self.play_position + frames]
-                # Ensure dimensions match
-                if len(current_chunk.shape) == 1:
-                    current_chunk = current_chunk.reshape(-1, 1)
-                outdata[:] = current_chunk
-                self.play_position += frames
-
-            # Reset playback position
-            self.play_position = 0
-
-            # Create and save output stream
-            self.stream = sd.OutputStream(
-                samplerate=samplerate,
-                channels=data.shape[1] if len(data.shape) > 1 else 1,
-                callback=callback
-            )
-
-            # Start playback
-            self.stream.start()
-            self.is_playing = True
-            self.play_button.setText(self.tr("停止"))
-
-        except Exception as e:
-            QMessageBox.critical(self, self.tr("错误"), self.tr("尝试播放时出错: {}").format(str(e)))
-            self.is_playing = False
-            self.play_button.setText(self.tr("播放"))
-            if hasattr(self, 'stream') and self.stream:
+        if hasattr(self, 'stream') and self.stream:
+            try:
                 self.stream.stop()
                 self.stream.close()
-                delattr(self, 'stream')
+            except:
+                pass
+            delattr(self, 'stream')
+
+        self.is_playing = False
+        self.play_button.setText(self.tr("播放"))
+
+    def stop_playback(self):
+        if self.is_playing:
+            self.stop_playback_signal.emit()
 
     def __del__(self):
         # Clean up resources
@@ -867,11 +1234,7 @@ class TTSGUI(QMainWindow):
         save_directory = self.save_path_input.text()
 
         if not save_directory:
-            QMessageBox.warning(
-                self,
-                self.tr("警告"),
-                self.tr("请先设置音频保存的路径。")
-            )
+            QMessageBox.warning(self, self.tr("警告"), self.tr("请先设置音频保存的路径。"))
             return
 
         if not os.path.exists(save_directory):
@@ -887,10 +1250,92 @@ class TTSGUI(QMainWindow):
             filename = self.generate_filename()
             file_path = os.path.join(save_directory, filename)
             shutil.copy2(self.current_audio_file, file_path)
-
             self.statusBar.showMessage(self.tr("音频保存至 {}").format(file_path))
+
         except Exception as e:
             QMessageBox.critical(self, self.tr("错误"), self.tr("保存音频时出错: {}").format(str(e)))
+
+    def restart_playback_from(self, position):
+        if hasattr(self, 'stream') and self.stream:
+            self.stream.stop()
+            self.stream.close()
+            delattr(self, 'stream')
+        self.play_audio_from(position)
+
+    def play_audio_from(self, position):
+        if not self.current_audio_file:
+            return
+
+        selection = self.waveform.get_selection()
+        if selection:
+            position = selection[0]
+            end_position = selection[1]
+        else:
+            end_position = None
+
+        if hasattr(self, 'stream') and self.stream:
+            self.stop_playback()
+
+        try:
+            if self.current_audio_file in self.audio_cache:
+                data, samplerate = self.audio_cache[self.current_audio_file]
+            else:
+                data, samplerate = sf.read(self.current_audio_file)
+                self.audio_cache[self.current_audio_file] = (data, samplerate)
+
+            if len(data.shape) == 1:
+                data = data.reshape(-1, 1)
+
+            self.play_position = int(position * samplerate)
+            self.play_end_position = int(end_position * samplerate) if end_position else len(data)
+
+            def callback(outdata, frames, time, status):
+                if status:
+                    print('Status:', status)
+
+                if self.play_position + frames >= self.play_end_position:
+                    remaining = self.play_end_position - self.play_position
+                    if remaining > 0:
+                        outdata[:remaining] = data[self.play_position:self.play_position + remaining]
+                        outdata[remaining:] = 0
+                    self.is_playing = False
+                    self.play_button.setText(self.tr("播放"))
+                    self.play_position = int(position * samplerate)
+                    self.stop_playback_signal.emit()
+                    self.waveform.update_cursor_during_playback(position)
+                    raise sd.CallbackStop()
+
+                current_chunk = data[self.play_position:self.play_position + frames]
+                if len(current_chunk.shape) == 1:
+                    current_chunk = current_chunk.reshape(-1, 1)
+                outdata[:] = current_chunk
+                self.play_position += frames
+
+            self.cursor_update_timer.start()
+            self.stream = sd.OutputStream(
+                samplerate=samplerate,
+                channels=data.shape[1] if len(data.shape) > 1 else 1,
+                callback=callback
+            )
+            self.stream.start()
+            self.is_playing = True
+            self.play_button.setText(self.tr("停止"))
+            self.waveform.update_cursor_during_playback(position)
+
+        except Exception as e:
+            QMessageBox.critical(self, self.tr("错误"), self.tr("尝试播放时出错: {}").format(str(e)))
+            self.is_playing = False
+            self.play_button.setText(self.tr("播放"))
+            if hasattr(self, 'stream') and self.stream:
+                self.stream.stop()
+                self.stream.close()
+                delattr(self, 'stream')
+
+    def update_playback_cursor(self):
+        if not hasattr(self, 'stream') or not self.stream or not self.is_playing:
+            return
+        current_time = self.play_position / self.audio_cache[self.current_audio_file][1]
+        self.waveform.update_cursor_during_playback(current_time)
 
     def set_save_path(self):
         directory = QFileDialog.getExistingDirectory(
@@ -905,11 +1350,10 @@ class TTSGUI(QMainWindow):
         # Get first 10 characters of text, remove special characters
         text = self.text_input.toPlainText().strip()
         clean_text = re.sub(r'[^\w\s]', '', text)
-        clean_text = clean_text.replace(' ', '_')
-        prefix = clean_text[:10]
+        clean_text = clean_text.replace('\n', '_').replace('\r', '_').replace(' ', '_').replace('_', '')
+        prefix = clean_text[:10] if clean_text else "audio"
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-
         return f"{prefix}_{timestamp}.wav"
 
     def load_preset(self):
@@ -1082,13 +1526,6 @@ class TTSGUI(QMainWindow):
             'save_directory': self.save_path_input.text()
         }
         self.config_manager.update_config(updates)
-
-        # Clean up temporary files
-        if self.current_audio_file and os.path.exists(self.current_audio_file):
-            try:
-                os.remove(self.current_audio_file)
-            except:
-                pass
 
         # Stop API check thread if running
         if self.api_check_thread:

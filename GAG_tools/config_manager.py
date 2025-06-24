@@ -44,6 +44,8 @@ class ConfigManager:
                 'api_url': 'http://127.0.0.1:9880',
                 'python_path': os.path.join('runtime', 'python.exe'),
                 'autostart_api': True,
+                'MAX_WAVE_DISPLAY_POINTS': 2500,
+                'language': 'auto',
                 'presets': {
                     'Default': {
                         'text_lang': 'all_zh',

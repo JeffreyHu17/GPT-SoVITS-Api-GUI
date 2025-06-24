@@ -1,6 +1,5 @@
 import sys
 import os
-
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QIcon
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout,
                              QTabWidget, QLabel)
@@ -10,15 +9,23 @@ import qdarktheme
 from GAG_tools.tts_gui_tab import TTSGUI
 from GAG_tools.api_manager_tab import APIManager
 from GAG_tools.batch_tts_tab import BatchTTS
+from GAG_tools.config_manager import ConfigManager
 import resources_rc
 
 
 def get_language():
-    locale = QLocale.system().name()
-    if locale.startswith('zh'):
-        return 'zh'  # Chinese (Simplified and Traditional)
+    config_manager = ConfigManager()
+    language = config_manager.get_value('language')
+    if language == 'auto':
+        locale = QLocale.system().name()
+        if locale.startswith('zh'):
+            return 'zh'  # Chinese (Simplified and Traditional)
+        else:
+            return 'en'  # English (default for all other languages)
+    elif language == 'zh':
+        return 'zh'
     else:
-        return 'en'  # English (default for all other languages)
+        return 'en'
 
 
 def get_base_path():
@@ -34,6 +41,7 @@ def get_base_path():
         # dev
         print('at dev')
         return ''
+
 
 def get_translator_path():
     language = get_language()
@@ -51,6 +59,7 @@ def get_translator_path():
             return translations_path
 
     print("Failed to load translator")
+
 
 def remove_screen_splash():
     if "NUITKA_ONEFILE_PARENT" in os.environ:
@@ -127,10 +136,10 @@ class GSVApiGUI(QWidget):
         scaling_factor = max(1.0, dpi / 96.0)  # assuming 96 DPI as the base
 
         # Scale the window size
-        base_width, base_height = 800, 800
+        base_width, base_height = 800, 820
         scaled_width = int(base_width * scaling_factor)
         scaled_height = int(base_height * scaling_factor)
-        self.setWindowTitle(self.tr('GSV Api GUI v0.4.2   by  领航员未鸟'))
+        self.setWindowTitle(self.tr('GSV Api GUI v0.4.3   by  领航员未鸟'))
         self.setGeometry(100, 100, scaled_width, scaled_height)
 
         # Scale the font, in theory this is redundant but there are strange special cases
@@ -160,7 +169,8 @@ class GSVApiGUI(QWidget):
 
         self.setLayout(main_layout)
 
-    def set_tab_background(self, tab_widget, image_path):
+    @staticmethod
+    def set_tab_background(tab_widget, image_path):
         background = QPixmap(image_path)
         if background.isNull():
             print(f"Failed to load background image: {image_path}")
@@ -193,6 +203,7 @@ class GSVApiGUI(QWidget):
         if hasattr(self, 'api_manager_tab'):
             self.api_manager_tab.cleanup()
         super().closeEvent(event)
+
 
 if __name__ == '__main__':
     qdarktheme.enable_hi_dpi()
